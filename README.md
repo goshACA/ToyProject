@@ -1,6 +1,5 @@
-# ToyProject
-#Team-TESLA
-###todo list:                                   ✅Done ⌛ In Progress
+# ToyProject Team-TESLA
+todo list:                                   ✅Done ⌛ In Progress
   - Convex Hull ⌛
   - Voronoi Diagram ⌛
   - Loading Textures ⌛
