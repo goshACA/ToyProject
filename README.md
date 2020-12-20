@@ -1,6 +1,6 @@
 # ToyProject Team-TESLA
 todo list:                                   ✅Done ⌛ In Progress
-  - Convex Hull ⌛
+  - Convex Hull ✅
   - Voronoi Diagram ⌛
   - Loading Textures ⌛
   - Calculating Gate Position ⌛
