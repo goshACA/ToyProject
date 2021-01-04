@@ -6,6 +6,6 @@ todo list:                                   ✅Done ⌛ In Progress
   - Calculating Gate Position ⌛
   - Calculating Cars Number In Each Field  ⌛
   - Calculating Cars' Positions In Each Field ⌛
-  - Calculating Shortest Paths ⌛
+  - Calculating Shortest Paths ✅
   - Finding The Right Field For Each Car ⌛
   - Applying Animations ⌛
