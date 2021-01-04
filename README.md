@@ -7,5 +7,6 @@ todo list:                                   ✅Done ⌛ In Progress
   - Calculating Cars Number In Each Field  ⌛
   - Calculating Cars' Positions In Each Field ⌛
   - Calculating Shortest Paths ✅
+  - Calculating Polynomial routes ⌛
   - Finding The Right Field For Each Car ⌛
   - Applying Animations ⌛
