@@ -10,12 +10,17 @@
 #include "Mesh.h"
 #include <queue>
 
+
+
 Mesh::~Mesh(){
     draw_triangles.clear();
     vertices.clear();
 }
 
-Mesh::Mesh(const vector<Triangle*>& triangles, const vector<Vector2D>& vertices, int argc,char **argv) :GlutWindow(argc,argv,"Dealunay",1000,800,FIXED){
+Mesh::Mesh(){
+}
+
+Mesh::Mesh(const vector<Triangle*>& triangles, const vector<Vector2D>& vertices) {
     
     for(int i = 0; i < vertices.size(); ++i){
         this->vertices.push_back(vertices[i]);
@@ -27,7 +32,7 @@ Mesh::Mesh(const vector<Triangle*>& triangles, const vector<Vector2D>& vertices,
     }
 }
 
-Mesh::Mesh(const vector<Vector2D>& vertices, int argc,char **argv) :GlutWindow(argc,argv,"Dealunay",1000,800,FIXED){
+Mesh::Mesh(const vector<Vector2D>& vertices) {
     
     for(int i = 0; i < vertices.size(); ++i){
         this->vertices.push_back(vertices[i]);
@@ -48,55 +53,84 @@ void Mesh::drawTriangles(){
     for(auto &p: draw_triangles){
         p->drawCircle();
     }
+    for(auto &p: draw_triangles){
+        p->drawCenter();
+    }
 }
 
-void Mesh::onDraw(){
-    drawTriangles();
+
+
+
+
+/*void Mesh::onDraw(){
+    if(isVoronoiSolved){
+        voronoi.defineColors();
+        for(int i = 0; i < voronoi.P.size(); ++i){
+            
+            glColor3d(0.5, 0.5, 0.5);
+            voronoi.P[i].draw();
+            
+            glColor3d(0.0, 0.0, 0.0);
+            //vector<Vector2D> line;
+           // line.push_back(Vector2D())
+             
+            
+        }
+        
+        for(int i = 5; i < voronoi.P.size(); ++i){
+            
+            voronoi.P[i].drawText();
+        }
+        
+    }else
+        drawTriangles();
 }
 
-void Mesh::onMouseMove(double cx, double cy){
+/*void Mesh::onMouseMove(double cx, double cy){
     Vector2D v((float)cx,(float)cy);
     for (auto &t:draw_triangles) {
         t->onMouseMove(v);
     }
-}
+}*/
 
 void Mesh::solveDealunay() {
     while(!isAllDealunay()){
-    list<int> processList;
-    auto t = draw_triangles.begin();
-    int c = 0;
-    while(t!=draw_triangles.end()){
-        processList.push_back(c);
-        ++c;
-        t++;
-    }
-    int* ind = new int(-1);
-    int count = 0;
-    while(processList.size()>1){
-        int cur_ind = processList.front();
-        auto current = draw_triangles[cur_ind];
-        processList.pop_front();
-        ++count;
-        if(!current->isDelaunay){
-            auto it = neighborInside(current, ind);
-            if(it != nullptr){
-                Triangle* Tneighbor = new Triangle(*it);
-                if(Tneighbor != nullptr){
-                    *draw_triangles[*ind] = *Tneighbor;
-                    current->flip(draw_triangles[*ind]);
-                    current->checkDelauney(vertices);
-                    draw_triangles[*ind]->checkDelauney(vertices);
-                    auto tr = processList.begin();
-                    while (tr!=processList.end() && draw_triangles[(*tr)]!=Tneighbor) tr++;
-                    if(tr!=processList.end()) processList.erase(tr);
-                }else {
-                    processList.push_back(cur_ind);
+        list<int> processList;
+        auto t = draw_triangles.begin();
+        int c = 0;
+        while(t!=draw_triangles.end()){
+            processList.push_back(c);
+            ++c;
+            t++;
+        }
+        int* ind = new int(-1);
+        int count = 0;
+        while(processList.size()>1){
+            int cur_ind = processList.front();
+            auto current = draw_triangles[cur_ind];
+            processList.pop_front();
+            ++count;
+            if(!current->isDelaunay){
+                auto it = neighborInside(current, ind);
+                if(it != nullptr){
+                    Triangle* Tneighbor = new Triangle(*it);
+                    if(Tneighbor != nullptr){
+                        *draw_triangles[*ind] = *Tneighbor;
+                        current->flip(draw_triangles[*ind]);
+                        current->checkDelauney(vertices);
+                        draw_triangles[*ind]->checkDelauney(vertices);
+                        auto tr = processList.begin();
+                        while (tr!=processList.end() && draw_triangles[(*tr)]!=Tneighbor) tr++;
+                        if(tr!=processList.end()) processList.erase(tr);
+                    }else {
+                        processList.push_back(cur_ind);
+                    }
                 }
             }
         }
     }
-    }
+    
+    voronoi = Voronoi(vertices, draw_triangles);
     
 }
 
@@ -117,9 +151,9 @@ Triangle* Mesh::neighborInside(Triangle* base, int* ind){
 }
 
 
-void Mesh::onKeyPressed(unsigned char c, double x, double y){
+/*void Mesh::onKeyPressed(unsigned char c, double x, double y){
     solveDealunay();
-}
+}*/
 
 
 void Mesh::triangulate(){
@@ -163,4 +197,33 @@ bool Mesh::isAllDealunay(){
         }
     }
     return true;
+}
+
+
+/*void Mesh::onMouseDown(int button,double cx,double cy){
+    if(!isVoronoiSolved){
+        voronoi.solveVoronoi();
+        isVoronoiSolved = true;
+    }
+}*/
+
+
+
+
+vector<Polygon> Mesh::getVoronoiPolygons(){
+    if(!isVoronoiSolved){
+        voronoi.solveVoronoi();
+        isVoronoiSolved = true;
+    }
+    return voronoi.P;
+}
+
+vector<Triangle*> Mesh::getTriangulation(){
+    return draw_triangles;
+}
+
+Edge Mesh::getUnshared(Polygon& p){
+    Edge e;
+    
+    return e;
 }

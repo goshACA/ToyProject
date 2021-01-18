@@ -23,6 +23,7 @@ Polygon::Polygon(){
     
 }
 Polygon::Polygon( vector<Vector2D>& points){
+    color[0] = -1;
     for(int i = 0; i < points.size(); ++i){
         vertices.push_back(points[i]);
     }
@@ -99,17 +100,46 @@ bool Polygon::comparison(const Vector2D& p1,  const Vector2D& p2){
     return p1*x < p2*x;
 }
 
+
+double fRand(double fMin, double fMax){
+    double f = (double)rand() / RAND_MAX;
+    return fMin + f * (fMax - fMin);
+}
+
+void Polygon::defineColor(int hexValue){
+    if(color[0] != -1)
+        return;
+    color[0] = ((hexValue >> 16) & 0xFF) / 255.0;  // Extract the RR byte
+    color[1] = ((hexValue >> 8) & 0xFF) / 255.0;   // Extract the GG byte
+    color[2] = ((hexValue) & 0xFF) / 255.0;        // Extract the BB byte
+}
+
 void Polygon::draw(){
+    for(auto &t: triangles){
+        t->color[0] = color[0];
+        t->color[1] = color[1];
+        t->color[2] = color[2];
+        if(isVoronoiMode)
+            t->draw(true);
+        
     
-    for(auto &t: triangles)
-        t->draw();
-    
-    for(int i = 0; i < vertices.size(); ++i){
-        glColor3d(0.0, 0.0, 0.0);
-        GlutWindow::drawText(vertices[i].x, vertices[i].y, std::to_string(i));
     }
-    
-    
+    if(isVoronoiMode){
+        glColor3f(0.0, 0.0, 0.0);
+        glLineWidth(3);
+        glBegin(GL_LINE_LOOP);
+        for(auto &p: outside_verts){
+            glVertex2d(p.x, p.y);
+        }
+        glEnd();
+    }
+}
+
+void Polygon::drawText(){
+    for(int i = 0; i < vertices.size(); ++i){
+        glColor3d(1.0, 1.0, 1.0);
+        GlutWindow::drawText(vertices[i].x, vertices[i].y, name, GlutWindow::ALIGN_CENTER);
+    }
 }
 bool Polygon::isOnTheLeft( Vector2D &p,  Vector2D &p1,  Vector2D &p2){
     Vector2D AB = p2 - p1,
@@ -142,7 +172,7 @@ void Polygon::tri(){
         if(!is_inside){
             base_triangles.push_back(new Triangle(top));
         }
-   
+        
     }
     
     triangles.clear();
@@ -151,3 +181,25 @@ void Polygon::tri(){
     }
     glutPostRedisplay();
 }
+
+void Polygon::setVoronoiMode(bool isVoronoi){
+    isVoronoiMode = isVoronoi;
+}
+
+void Polygon::addPoint(Vector2D v){
+    vertices.push_back(v);
+}
+void Polygon::addVertice(int position,Vector2D v){
+    vertices.insert(vertices.begin()+position, v);
+}
+
+double Polygon::calculateSurface(){
+    double res = 0;
+    for(auto &t: triangles){
+        res += t->surface();
+    }
+    return res;
+}
+
+
+

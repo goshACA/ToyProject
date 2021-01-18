@@ -65,7 +65,11 @@ public :
   }
     
     void print(){
-        std::cout << " x: " << x << " y: " << y << std::endl;
+        std::cout << toString();
+    }
+    
+    string toString(){
+        return " ( " +  to_string((int)x) + ", " + to_string((int)y) +" )\n";
     }
    
 };

@@ -27,6 +27,7 @@ public:
     Vector2D circumCenter;
     float circumRadius = -1;
     bool isDelaunay=false;
+    float color[3] = {-1};
     
     
     Triangle(Vector2D *ptr1,Vector2D *ptr2,Vector2D *ptr3) {
@@ -77,8 +78,25 @@ public:
         circumRadius = (float)(u.norm());
     }
     
+    
+    int verticeIndex(Vector2D& v){
+        for(int i = 0; i < 3; ++i){
+            if(*ptr[i] == v){
+                return i;
+            }
+        }return -1;
+    }
+    
     void onMouseMove(const Vector2D& pos) {
         isHighlighted=isInside(pos);
+    }
+    
+    void print(){
+        std::cout << "Print TRIANGLE\n";
+        for(int i = 0; i < 3; ++i){
+            ptr[i]->print();
+        }
+        std::cout << std::endl;
     }
     
     bool isOnTheLeft(const Vector2D *P,const Vector2D *P1,const Vector2D *P2) {
@@ -132,25 +150,65 @@ public:
     
     
     void updateEdges(){
+        flipClockWise();
         edge[0] = Edge(*ptr[0], *ptr[1]);
         edge[1] = Edge(*ptr[1], *ptr[2]);
         edge[2] = Edge(*ptr[0], *ptr[2]);
     }
     
+    bool isEdge(const Edge& e){
+        for(int i = 0; i < 3; ++i){
+            if(edge[i].areIdentical(e)){
+                return true;
+            }
+        } return false;
+    }
+    
     void draw() {
         glClearColor(1.0, 1.0, 1.0, 1.0);
-        glColor3fv(isHighlighted?ORANGE:(isDelaunay?GREY:YELLOW));
+        glColor3fv(color[0] != -1 ? color: (isHighlighted?ORANGE:(isDelaunay?GREY:YELLOW)));
         glBegin(GL_TRIANGLES);
         glVertex2f(ptr[0]->x,ptr[0]->y);
         glVertex2f(ptr[1]->x,ptr[1]->y);
         glVertex2f(ptr[2]->x,ptr[2]->y);
         glEnd();
-        glColor3fv(BLACK);
+        glColor3fv(RED);
         glBegin(GL_LINE_LOOP);
         glVertex2f(ptr[0]->x,ptr[0]->y);
         glVertex2f(ptr[1]->x,ptr[1]->y);
         glVertex2f(ptr[2]->x,ptr[2]->y);
         glEnd();
+        
+    }
+    
+    
+    void draw(bool withoutOutline) {
+        glClearColor(1.0, 1.0, 1.0, 1.0);
+        glColor3fv(color[0] != -1 ? color: (isHighlighted?ORANGE:(isDelaunay?GREY:YELLOW)));
+        glBegin(GL_TRIANGLES);
+        glVertex2f(ptr[0]->x,ptr[0]->y);
+        glVertex2f(ptr[1]->x,ptr[1]->y);
+        glVertex2f(ptr[2]->x,ptr[2]->y);
+        glEnd();
+    }
+    
+    void drawCenter(){
+        if(circumRadius == -1){
+            calculateCircle();
+        }
+        glColor3fv(GREEN);
+        glPushMatrix();
+        glTranslatef(circumCenter.x,circumCenter.y,0);
+        glLineWidth(3);
+        glBegin(GL_LINE_LOOP);
+        float a=0.0;
+        for (int i=0; i<40; i++) {
+            glVertex2f(5*cos(a),5*sin(a));
+            a+=(float)(M_PI/20.0);
+        }
+        glEnd();
+        glLineWidth(1);
+        glPopMatrix();
     }
     
     void drawCircle() {
@@ -173,6 +231,11 @@ public:
             glLineWidth(1);
             glPopMatrix();
         }
+    }
+    
+    void clear(){
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f );
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
     
     bool isInsideCircle(const Vector2D &p) {
@@ -226,6 +289,10 @@ public:
         sum += (ptr[2]->x - ptr[1]->x) * (ptr[2]->y + ptr[1]->y);
         sum += (ptr[0]->x - ptr[2]->x) * (ptr[0]->y + ptr[2]->y);
         return sum < 0.0;
+    }
+    
+    bool isVertice(const Vector2D& v){
+        return !isNotVertice(v);
     }
     
     void flipClockWise(){
@@ -284,6 +351,22 @@ public:
         
         calculateCircle();
         neighbor->calculateCircle();
+    }
+    
+    double surface(){
+        double res = 0;
+        Vector2D AB = setZeroPositive(Vector2D(ptr[1]->x - ptr[0]->x, ptr[1]->y - ptr[0]->y));
+        Vector2D BC = setZeroPositive(Vector2D(ptr[2]->x - ptr[1]->x, ptr[2]->y - ptr[1]->y));
+        Vector2D CA = setZeroPositive(Vector2D(ptr[0]->x - ptr[2]->x, ptr[0]->y - ptr[2]->y));
+       
+        double s = (AB.norm() + BC.norm() + CA.norm())/2;
+        return sqrt(s*(s - AB.norm())*(s - BC.norm())*(s - CA.norm()));
+    }
+    
+    Vector2D setZeroPositive(Vector2D AB){
+        if(AB.x < 0) AB.x = 0;
+        if(AB.y < 0) AB.y = 0;
+        return AB;
     }
     
     
