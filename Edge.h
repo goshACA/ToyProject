@@ -26,6 +26,10 @@ struct Edge {
     bool operator!=(const Edge& other) const{
         return !(*this == other);
     }
+    
+    bool operator < (const Edge& other) const{
+        return (B - A).norm() < (other.B - other.A).norm();
+    }
     bool isNotVertice(const Vector2D& point) const{
         return point != A && point != B;
     }

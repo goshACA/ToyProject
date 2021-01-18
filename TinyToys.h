@@ -19,21 +19,7 @@ using namespace std;
 Vector2D und(-10000, -10000);
 Edge undef(und, und);
 
-struct Texture {
-    GLuint id;
-    int f_width;
-    int f_height;
-    string name;
-    Texture(GLuint id,
-            int f_width,
-            int f_height,
-            string name){
-        this->id = id;
-        this->f_width = f_width;
-        this->f_height = f_height;
-        this->name = name;
-    }
-};
+
 
 #define MAXN 100
 // Infinite value for array
@@ -137,7 +123,8 @@ private:
     vector<Triangle*> triangles;
     vector<double> S;
     vector<Car> cars;
-    vector<Texture> figures;
+    vector<Gate> gates;
+    vector<CarPark> carparks;
     Mesh m;
     bool isVoronoiMode = false;
     GLuint park;
@@ -171,19 +158,27 @@ public:
         int x = 0, y = 0;
         park = loadTGATexture("../Textures/parks/carpark.tga",x,y);
         gate = loadTGATexture("../Textures/parks/carstop.tga",x,y);
-        initFigures();
     }
     
     void initFigures(){
-        int park_w = 80, park_h = 40, car_w = 32, car_h = 32;
         int x = 0, y = 0;
         GLuint park = loadTGATexture("../Textures/parks/carpark.tga",x,y);
         GLuint gate = loadTGATexture("../Textures/parks/carstop.tga",x,y);
-        //TODO: add random + check
         GLuint car = loadTGATexture("../Textures/cars/bluecar.tga",x,y);
-        figures.push_back(Texture(park, park_w, park_h, parkName));
-        figures.push_back(Texture(gate, park_w, park_h, gateNAME));
-        figures.push_back(Texture(car, car_w, car_h, carNAME));
+        for(int i = 0; i < adjacency.size(); ++i){
+            for(int j = 0; j < adjacency.size(); ++j){
+                auto midpoint = getMidPoint(adjacency[j][i].A, adjacency[j][i].B);
+                double angle =  getAngle(adjacency[i][j].A, adjacency[i][j].B);
+                if(i == j){
+                    //add count
+                    carparks.push_back(CarPark(midpoint, park,  90 + angle));
+                }
+                if(graph[i][j] !=INF){
+                    gates.push_back(Gate(midpoint, gate, angle));
+                }
+            }
+        }
+        //add cars
         
     }
     
@@ -240,31 +235,42 @@ public:
         setVoronoiPolygons();
         calculateSurface();
         adjacency = m.getAdjacency();
+        initFigures();
     }
     
     void drawAdjacency(){
-        for(int i = 0; i < adjacency.size(); ++i){
+        /*for(int i = 0; i < adjacency.size(); ++i){
             for(int j = 0; j < adjacency.size(); ++j){
-                //if(adjacency[i][j] != undef){
-                if(graph[i][j] !=INF){
-                    auto midpoint = (adjacency[i][j].A + adjacency[i][j].B) * 0.5;
-                    int delta = 0;
-                    if(graph[j][i] != INF){
-                        delta = figures[1].f_width/2;
-                        drawTexture(midpoint.x - delta, midpoint.y, figures[1], getAngle(adjacency[j][i].A, adjacency[j][i].B));
-                    }
-                    drawTexture(midpoint.x + delta, midpoint.y, figures[1], getAngle(adjacency[i][j].A, adjacency[i][j].B));
+                 auto midpoint = getMidPoint(adjacency[j][i].A, adjacency[j][i].B);
+                if(i == j){
+                    drawTexture(midpoint.x, midpoint.y, figures[0], 90+getAngle(adjacency[i][j].A, adjacency[i][j].B));
                 }
-                // }
+                if(graph[i][j] !=INF){
+                    drawTexture(midpoint.x, midpoint.y, figures[1], getAngle(adjacency[i][j].A, adjacency[i][j].B));
+                }
             }
+
+        }*/
+        for(auto &gate: gates){
+             drawTexture(gate);
+        }
+        for(auto &carpark: carparks){
+             drawTexture(carpark);
         }
     }
     
-    double getAngle(Vector2D& a, Vector2D& b){
-        double angle = 0;
-        double l = (b - a).norm();
-        double c = Vector2D(b.x - a.x, a.y).norm();
-        return radianstodegrees(acos(c/l));
+
+    Vector2D getMidPoint(Vector2D& a, Vector2D& b){
+        return (b + a)*0.5;
+    }
+    
+    double getAngle(const Vector2D &a, const Vector2D &b)  {
+      Vector2D u = b-a;
+        if (u.x>0) {
+            return radianstodegrees(asin(u.y/u.norm()));
+      } else {
+          return 180-radianstodegrees(asin(u.y/u.norm()));
+      }
     }
     
     void drawTriangles(){
@@ -293,10 +299,10 @@ public:
     }
     
     
-    void drawTexture(int lx, int ly, Texture& t, double angle){
+    void drawTexture(Texture& t){
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        
+        //angle = 90;
         
         assert(t.id!=0);
         
@@ -305,7 +311,7 @@ public:
         glBindTexture(GL_TEXTURE_2D,t.id);
         glPushMatrix();
         
-        glTranslatef(lx,ly,0.0);
+        /*glTranslatef(lx,ly,0.0);
        // glRotatef(angle, 0.0, 1.0, 0.0);
         glBegin(GL_QUADS);
         glTexCoord2f(0.0,0.0);
@@ -318,6 +324,35 @@ public:
         glVertex2f(0.0,t.f_height);
         glEnd();
         glPopMatrix();
+        glDisable(GL_TEXTURE_2D);*/
+        
+        glEnable(GL_TEXTURE_2D);
+
+        glBindTexture(GL_TEXTURE_2D, t.id);
+
+        glTranslatef(t.pos.x, t.pos.y, 0);
+        glRotatef(t.rotateAngle, 0, 0, 1);
+
+        glBegin(GL_QUADS);
+        int xStart = 0, xEnd = 1, yStart = 0, yEnd = 1;
+        glTexCoord2d(xEnd,yEnd);
+        glVertex2f(0, 0);
+
+        glTexCoord2d(xStart,yEnd);
+        glVertex2f(t.f_width, 0);
+
+        glTexCoord2d(xStart,yStart);
+        glVertex2f(t.f_width,t.f_height);
+
+        glTexCoord2d(xEnd,yStart);
+        glVertex2f(0, t.f_height);
+
+        glEnd();
+
+        //Reset the rotation and translation
+        glRotatef(-t.rotateAngle,0,0,1);
+        glTranslatef(-t.pos.x, -t.pos.y, 0);
+
         glDisable(GL_TEXTURE_2D);
         
         

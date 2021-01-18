@@ -18,6 +18,8 @@
 #include <stack>
 #include <map>
 #define INF 10000
+#define width 1280
+#define height 840
 
 using namespace std;
 
@@ -35,9 +37,7 @@ struct Room{
 
 class Polygon {
 private:
-    
-    Edge unsharedEdge;
-    
+    vector<Vector2D> outside_verts;
     vector<Triangle*> triangles;
     bool isOnTheLeft( Vector2D &p,  Vector2D &p1,  Vector2D &p2);
     bool comparison(const Vector2D& p1,  const Vector2D& p2);
@@ -49,10 +49,9 @@ private:
         }
     }
 public:
-    vector<Vector2D> outside_verts;
+    
     vector<Edge> edges;
-    map<Vector2D, Edge> _edges;
-    vector<Vector2D> neighborEdges;
+    vector<Edge> borderEdges;
     vector<Vector2D> vertices;
     float color[3];
     string name;
@@ -72,21 +71,22 @@ public:
     void defineColor(int hexValue);
     double calculateSurface();
     void setEdges(){
-        vector<Vector2D> norm;
-       for(int i = 0; i < outside_verts.size(); ++i){
-           
-           norm.push_back(outside_verts[i]);
-       }
-        
-        for(int i = 0; i < norm.size(); ++i){
-           
-        }
         
         for(int i = 0; i < outside_verts.size() - 1; ++i){
-           
-            edges.push_back(Edge(norm[i], norm[i+1]));
+            Edge e(outside_verts[i], outside_verts[i+1]);
+            if(outside_verts[i].x == 0 || outside_verts[i].x == width ||  outside_verts[i].y == 0 || outside_verts[i].y == height
+               || outside_verts[i+1].x == 0 || outside_verts[i+1].x == width ||  outside_verts[i+1].y == 0 || outside_verts[i+1].y == height
+               && (outside_verts[i].x == outside_verts[i+1].x || outside_verts[i].y == outside_verts[i+1].y))
+                borderEdges.push_back(e);
+            edges.push_back(e);
         }
+        Edge e(outside_verts[0], outside_verts[outside_verts.size()-1]);
+        if(outside_verts[0].x == 0 || outside_verts[0].x == width ||  outside_verts[0].y == 0 || outside_verts[0].y == height
+           || outside_verts[outside_verts.size()-1].x == 0 || outside_verts[outside_verts.size()-1].x == width ||  outside_verts[outside_verts.size()-1].y == 0 || outside_verts[outside_verts.size()-1].y == height
+        && (outside_verts[0].x == outside_verts[outside_verts.size()-1].x || outside_verts[0].y == outside_verts[outside_verts.size()-1].y))
+            borderEdges.push_back(e);
         edges.push_back(Edge(outside_verts[outside_verts.size()-1], outside_verts[0]));
+        sort(borderEdges.begin(), borderEdges.end());
     }
     
     void setEdges(vector<Edge> e){

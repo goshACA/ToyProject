@@ -9,6 +9,42 @@
 #include "Vector2D.h"
 #include "Polygon.h"
 
+const int park_w = 80, park_h = 40, car_w = 32, car_h = 32;
+struct Texture {
+    GLuint id;
+    int f_width;
+    int f_height;
+    Vector2D pos;
+    string name;
+    double rotateAngle;
+    Texture(Vector2D& pos, GLuint id,
+            int f_width,
+            int f_height,
+            double rotateAngle,
+            string name){
+        this->pos = pos;
+        this->id = id;
+        this->f_width = f_width;
+        this->f_height = f_height;
+        this->rotateAngle = rotateAngle;
+        this->name = name;
+    }
+};
+
+struct Gate: Texture {
+    Gate(Vector2D& pos, GLuint id, double rotateAngle,
+    int f_width = park_h,
+    int f_height = park_w): Texture(pos, id,
+                           f_width, f_height, rotateAngle, "GATE"){}
+};
+
+struct CarPark: Texture {
+    int count;
+    CarPark(Vector2D& pos, GLuint id, double rotateAngle, int count = 0): Texture(pos, id,
+                           park_w, park_h, rotateAngle, "CARPARK"){
+        this->count = count;
+    }
+};
 
 class Car {
 

@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <vector>
 #include "glutWindow.h"
-#include "Car.h"
+
 #include "TinyToys.h"
 using namespace std;
 #define INF  99999

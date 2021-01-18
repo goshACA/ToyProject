@@ -90,22 +90,25 @@ public:
             for(int j = 0; j <= i; ++j){
                 for(auto &e: P[i].edges){
                     if(i == j) {
-                        Vector2D v = e.B - e.A;
-                        auto res = vert[hashFunc(v)];
-                        if(res.size() == 1){
-                            adjacency[i][j] = e;
-                        }
-                        break;
-                    }
-                    for(auto &k: P[j].edges){
-                        if(e == k || e == Edge(k.B, k.A)){
-                            adjacency[i][j] = e;
-                            adjacency[j][i] = k;
+                        int size = P[i].borderEdges.size();
+                        if(size > 0)
+                            adjacency[i][j] = P[i].borderEdges[size-1];
+                    }else{
+                        for(auto &k: P[j].edges){
+                            if(e == k || e == Edge(k.B, k.A)){
+                                adjacency[i][j] = e;
+                                adjacency[j][i] = k;
+                            }
                         }
                     }
                 }
             }
         }
+    }
+    
+    vector<Edge> getUnsharedBorders(int i){
+        vector<Edge> edges;
+        return edges;
     }
     
     vector<Edge> setEdges(vector<Vector2D> points){
