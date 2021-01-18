@@ -9,4 +9,4 @@ todo list:                                   ✅Done ⌛ In Progress
   - Calculating Shortest Paths ✅
   - Calculating Polynomial routes ⌛
   - Finding The Right Field For Each Car ⌛
-  - Applying Animations ⌛
+  - Applying Animations ✅
