@@ -23,17 +23,7 @@
 
 using namespace std;
 
-struct Room{
-    string name = "";
-    Vector2D point;
-    int hexValue = -1;
-    Room(): point(Vector2D(-1, -1)) {
-        
-    }
-    Room(string _name, float x, float y, int _hexValue): name(_name), point(Vector2D(x, y)){
-        hexValue = _hexValue;
-    }
-};
+
 
 class Polygon {
 private:

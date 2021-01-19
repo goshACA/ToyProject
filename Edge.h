@@ -38,6 +38,10 @@ struct Edge {
         return A == other.A && B == other.B;
     }
     
+    bool isZero(){
+        return A == Vector2D(-1, -1) && B == Vector2D(-1, -1);
+    }
+    
     Vector2D center(){
         return Vector2D((B.x + A.x)/2, (B.y + A.y)/2);
     }

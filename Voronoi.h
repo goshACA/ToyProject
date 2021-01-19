@@ -93,22 +93,17 @@ public:
                         int size = P[i].borderEdges.size();
                         if(size > 0)
                             adjacency[i][j] = P[i].borderEdges[size-1];
-                    }else{
-                        for(auto &k: P[j].edges){
-                            if(e == k || e == Edge(k.B, k.A)){
-                                adjacency[i][j] = e;
-                                adjacency[j][i] = k;
-                            }
+                        break;
+                    }
+                    for(auto &k: P[j].edges){
+                        if(e == k || e == Edge(k.B, k.A)){
+                            adjacency[i][j] = e;
+                            adjacency[j][i] = k;
                         }
                     }
                 }
             }
         }
-    }
-    
-    vector<Edge> getUnsharedBorders(int i){
-        vector<Edge> edges;
-        return edges;
     }
     
     vector<Edge> setEdges(vector<Vector2D> points){

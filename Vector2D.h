@@ -53,6 +53,9 @@ public :
     Vector2D ortho() {
         return Vector2D(-y,x);
     }
+    Vector2D rightOrtho() {
+        return Vector2D(y,-x);
+    }
     
     Vector2D operator=(const Vector2D &rhs) {
 

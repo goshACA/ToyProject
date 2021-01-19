@@ -354,13 +354,13 @@ public:
     }
     
     double surface(){
-        double res = 0;
-        Vector2D AB = setZeroPositive(Vector2D(ptr[1]->x - ptr[0]->x, ptr[1]->y - ptr[0]->y));
-        Vector2D BC = setZeroPositive(Vector2D(ptr[2]->x - ptr[1]->x, ptr[2]->y - ptr[1]->y));
-        Vector2D CA = setZeroPositive(Vector2D(ptr[0]->x - ptr[2]->x, ptr[0]->y - ptr[2]->y));
+        Vector2D AB = *ptr[1] - *ptr[0];
+        Vector2D AC = *ptr[2] - *ptr[0];
        
-        double s = (AB.norm() + BC.norm() + CA.norm())/2;
-        return sqrt(s*(s - AB.norm())*(s - BC.norm())*(s - CA.norm()));
+        double product = AB.x*AC.y-AC.x*AB.y;
+        if(product < 0) product *= -1;
+        return 0.5*product;
+       
     }
     
     Vector2D setZeroPositive(Vector2D AB){

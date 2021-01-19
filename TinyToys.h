@@ -129,6 +129,10 @@ private:
     bool isVoronoiMode = false;
     GLuint park;
     GLuint gate;
+    GLuint carId;
+    bool move = false;
+    double t = 0.005;
+    map<string, int> colorCounts;
 public:
     
     TinyToys(vector<Room> &rooms, vector<vector<int> > &graph, int argc,char **argv) :GlutWindow(argc,argv,"TinyToys", width, height, FIXED) {
@@ -158,29 +162,89 @@ public:
         int x = 0, y = 0;
         park = loadTGATexture("../Textures/parks/carpark.tga",x,y);
         gate = loadTGATexture("../Textures/parks/carstop.tga",x,y);
+        carId= loadTGATexture("../Textures/cars/bluecar.tga",x,y);
     }
     
     void initFigures(){
         int x = 0, y = 0;
-        GLuint park = loadTGATexture("../Textures/parks/carpark.tga",x,y);
-        GLuint gate = loadTGATexture("../Textures/parks/carstop.tga",x,y);
-        GLuint car = loadTGATexture("../Textures/cars/bluecar.tga",x,y);
+        
+        
+        
         for(int i = 0; i < adjacency.size(); ++i){
             for(int j = 0; j < adjacency.size(); ++j){
                 auto midpoint = getMidPoint(adjacency[j][i].A, adjacency[j][i].B);
                 double angle =  getAngle(adjacency[i][j].A, adjacency[i][j].B);
-                if(i == j){
-                    //add count
-                    carparks.push_back(CarPark(midpoint, park,  90 + angle));
-                }
                 if(graph[i][j] !=INF){
-                    gates.push_back(Gate(midpoint, gate, angle));
+                    auto g = Gate(midpoint, adjacency[i][j], gate, angle);
+                    gates.push_back(g);
+                    rooms[i].gate = g;
                 }
             }
         }
-        //add cars
+        
+        setCarParkBorders();
+        
+        
+        
+        for(int i = 0; i < adjacency.size(); ++i){
+            auto midpoint = getMidPoint(adjacency[i][i].A, adjacency[i][i].B);
+            double angle =  getAngle(adjacency[i][i].A, adjacency[i][i].B);
+            
+            if(midpoint.x == 0 || midpoint.y == height){
+                angle = -angle + 90;
+            }
+            else if(midpoint.x == width || midpoint.y == 0 && angle == 0){
+                angle += 90;
+            }
+            else if(midpoint.y == 0 && angle == 180){
+                angle -=90;
+            }
+            else {
+                angle += 90;
+            }
+            
+        
+            
+            Vector2D point;
+            int count = getCarParkCount(i);
+            int k = 0;
+            Edge e;
+            while(k < count){
+                int d = round(count/2), dist = 0;
+                if(k <= d){
+                    e = Edge(midpoint, adjacency[i][i].A);
+                    dist = k;
+                }else {
+                    e = Edge(midpoint, adjacency[i][i].B);
+                    dist = k - d;
+                }
+                point = pointOnDistance(40*dist, e);
+                auto carpark = CarPark(point, adjacency[i][i], park,  angle, i);
+                carparks.push_back(carpark);
+                rooms[i].parks.push_back(carpark);
+                ++k;
+            }
+        }
+        fillColorMap();
+        placeCars();
         
     }
+    
+   
+    
+    Vector2D pointOnDistance(float distance, Edge& e){
+        Vector2D v = e.B - e.A;
+        Vector2D u = v;
+        u.normalize();
+        return e.A + u*distance;
+    }
+    
+    Vector2D pointOnDistance(float distance, Vector2D& a, Vector2D& v){
+        Vector2D u = v;
+        u.normalize();
+        return a + u*distance;
+    }
+    
     
     void setTriangulation(){
         triangles.clear();
@@ -188,6 +252,36 @@ public:
         for(int i = 0; i < res.size(); ++i ){
             triangles.push_back(res[i]);
         }
+    }
+    void fillColorMap(){
+        for(auto &room: rooms){
+            colorCounts.insert({Room::getColorName(room.name), room.parks.size()});
+        }
+    }
+    
+    void setCarParkBorders(){
+        for(int i = 0; i < polygons.size(); ++i){
+            Edge maxBorder;
+            if(adjacency[i][i] == undef){
+                for(auto &e: polygons[i].edges){
+                    int count = 0;
+                    auto midpoint = getMidPoint(e.A, e.B);
+                    for(auto &gate: gates){
+                        if(gate.e == e){
+                            count ++;
+                        }
+                    }if(count == 0){
+                        if(maxBorder < e){
+                            maxBorder = e;
+                        }
+                    }
+                }
+            }
+            if(adjacency[i][i] == undef && !maxBorder.isZero())
+                adjacency[i][i] = maxBorder;
+            
+        }
+        
     }
     
     void setVoronoiPolygons(){
@@ -209,9 +303,41 @@ public:
         }
     }
     
+    int getCarParkCount(int i){
+        return floor(4*S[i]/(3*S[S.size()-1]));
+    }
+    
+    
+    void placeCars(){
+        for(int i = 0; i < polygons.size(); ++i){
+            for(auto &carpark: carparks){
+                if(carpark.polygon == i){
+                    auto v0 = (carpark.e.B - carpark.e.A).rightOrtho();
+                    auto v1 = (rooms[i].gate.e.B - rooms[i].gate.e.A).rightOrtho();
+                    auto destPos = rooms[i].gate.pos;
+                    auto startPos = getShiftedPoint(carpark);
+                    auto car = new Car(getCarTextureByColor(rooms[i].name), startPos,destPos, v0, v1, i, carpark.rotateAngle);
+                    cars.push_back(*car);
+                    rooms[i].cars.push_back(car);
+                    
+                }
+            }
+        }
+    }
+    
+    GLuint getCarTextureByColor(string name){
+        string res = Room::getWrongColorName(name, colorCounts);
+        --colorCounts[res];
+        int x = 0, y = 0;
+        return loadTGATexture("../Textures/cars/" + res + "car.tga",x,y);
+    }
+    
+    
     
     void onUpdate(double dt) override{
-        
+        if(move ){
+            cars[10].t = cars[10].move(t, 30);
+        }
     }
     
     void onKeyPressed(unsigned char c, double x, double y) override{
@@ -220,6 +346,10 @@ public:
             setTriangulation();
         } else if(c == 'd' && !isVoronoiMode){
             toVoronoiMode();
+        }
+        
+        else if(c == 'g'){
+            move = true;
         }
     }
     
@@ -233,44 +363,57 @@ public:
     void toVoronoiMode(){
         isVoronoiMode = true;
         setVoronoiPolygons();
-        calculateSurface();
         adjacency = m.getAdjacency();
+        calculateSurface();
         initFigures();
     }
     
     void drawAdjacency(){
-        /*for(int i = 0; i < adjacency.size(); ++i){
-            for(int j = 0; j < adjacency.size(); ++j){
-                 auto midpoint = getMidPoint(adjacency[j][i].A, adjacency[j][i].B);
-                if(i == j){
-                    drawTexture(midpoint.x, midpoint.y, figures[0], 90+getAngle(adjacency[i][j].A, adjacency[i][j].B));
-                }
-                if(graph[i][j] !=INF){
-                    drawTexture(midpoint.x, midpoint.y, figures[1], getAngle(adjacency[i][j].A, adjacency[i][j].B));
-                }
-            }
-
-        }*/
         for(auto &gate: gates){
-             drawTexture(gate);
+            drawTexture(gate);
         }
         for(auto &carpark: carparks){
-             drawTexture(carpark);
+            drawTexture(carpark);
         }
+        
+        for(auto &car: cars){
+            drawCar(car);
+            
+        }
+        
     }
     
-
+    Vector2D getOrhoVector(Texture& txt){
+        auto d = (txt.e.B - txt.e.A).ortho();
+        auto midpoint = txt.pos;
+        if(midpoint.y == 0){
+            d.normalize();
+            if((d.y > 0)) d = (txt.e.B - txt.e.A).ortho();
+            else d = (txt.e.B - txt.e.A).rightOrtho();
+        } else if(midpoint.x == 0){
+            d.normalize();
+            if((d.y < 0)) d = (txt.e.B - txt.e.A).ortho();
+            else d = (txt.e.B - txt.e.A).rightOrtho();
+        }return d;
+    }
+    
+    Vector2D getShiftedPoint(Texture& txt){
+        auto d = getOrhoVector(txt);
+        return pointOnDistance(txt.f_width, txt.pos, d);
+    }
+    
+    
     Vector2D getMidPoint(Vector2D& a, Vector2D& b){
         return (b + a)*0.5;
     }
     
     double getAngle(const Vector2D &a, const Vector2D &b)  {
-      Vector2D u = b-a;
+        Vector2D u = b-a;
         if (u.x>0) {
             return radianstodegrees(asin(u.y/u.norm()));
-      } else {
-          return 180-radianstodegrees(asin(u.y/u.norm()));
-      }
+        } else {
+            return 180-radianstodegrees(asin(u.y/u.norm()));
+        }
     }
     
     void drawTriangles(){
@@ -299,6 +442,77 @@ public:
     }
     
     
+    void drawCar(Car& t){
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        //angle = 90;
+        
+        assert(t.textureId!=0);
+        
+        /*glEnable(GL_TEXTURE_2D);
+         glPushMatrix();
+         glBindTexture(GL_TEXTURE_2D,t.textureId);
+         glPushMatrix();
+         
+         
+         glEnable(GL_TEXTURE_2D);
+         
+         //glBindTexture(GL_TEXTURE_2D, t.textureId);
+         
+         glTranslatef(t.position.x, t.position.y, 0);
+         glRotatef(t.angle, 0, 0, 1);
+         
+         glBegin(GL_QUADS);
+         int xStart = 0, xEnd = 1, yStart = 0, yEnd = 1;
+         glTexCoord2d(xEnd,yEnd);
+         glVertex2f(0, 0);
+         
+         glTexCoord2d(xStart,yEnd);
+         glVertex2f(t.f_width, 0);
+         
+         glTexCoord2d(xStart,yStart);
+         glVertex2f(t.f_width,t.f_height);
+         
+         glTexCoord2d(xEnd,yStart);
+         glVertex2f(0, t.f_height);
+         
+         glEnd();
+         
+         //Reset the rotation and translation
+         glRotatef(-t.angle,0,0,1);
+         glTranslatef(-t.position.x, -t.position.y, 0);
+         
+         glDisable(GL_TEXTURE_2D);*/
+        int xStart = 0, xEnd = 1, yStart = 0, yEnd = 1;
+        glEnable(GL_TEXTURE_2D);
+        
+        glBindTexture(GL_TEXTURE_2D, t.textureId);
+        
+        glTranslatef(t.position.x, t.position.y, 0);
+        glRotatef(t.angle, 0, 0, 1);
+        
+        glBegin(GL_QUADS);
+        glTexCoord2d(xStart,yStart);
+        glVertex2f(-t.f_width, t.f_height);
+        
+        glTexCoord2d(xEnd,yStart);
+        glVertex2f(0, t.f_height);
+        
+        glTexCoord2d(xEnd,yEnd);
+        glVertex2f(0, 0);
+        
+        glTexCoord2d(xStart,yEnd);
+        glVertex2f(-t.f_width, 0);
+        
+        glEnd();
+        
+        //Reset the rotation and translation
+        glRotatef(-t.angle,0,0,1);
+        glTranslatef(-t.position.x, -t.position.y, 0);
+        
+        glDisable(GL_TEXTURE_2D);
+    }
+    
     void drawTexture(Texture& t){
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -306,113 +520,103 @@ public:
         
         assert(t.id!=0);
         
-       glEnable(GL_TEXTURE_2D);
+        glEnable(GL_TEXTURE_2D);
         glPushMatrix();
         glBindTexture(GL_TEXTURE_2D,t.id);
         glPushMatrix();
         
-        /*glTranslatef(lx,ly,0.0);
-       // glRotatef(angle, 0.0, 1.0, 0.0);
-        glBegin(GL_QUADS);
-        glTexCoord2f(0.0,0.0);
-        glVertex2f(0.0,-t.f_height);
-        glTexCoord2f(1.0,0.0);
-        glVertex2f(t.f_width,-t.f_height);
-        glTexCoord2f(1.0,1.0);
-        glVertex2f(t.f_width,t.f_height);
-        glTexCoord2f(0.0,1.0);
-        glVertex2f(0.0,t.f_height);
-        glEnd();
-        glPopMatrix();
-        glDisable(GL_TEXTURE_2D);*/
         
         glEnable(GL_TEXTURE_2D);
-
+        
         glBindTexture(GL_TEXTURE_2D, t.id);
-
+        
         glTranslatef(t.pos.x, t.pos.y, 0);
         glRotatef(t.rotateAngle, 0, 0, 1);
-
+        
         glBegin(GL_QUADS);
-        int xStart = 0, xEnd = 1, yStart = 0, yEnd = 1;
+        int xStart = 1, xEnd = 0, yStart = 0, yEnd = 1;
         glTexCoord2d(xEnd,yEnd);
         glVertex2f(0, 0);
-
+        
         glTexCoord2d(xStart,yEnd);
         glVertex2f(t.f_width, 0);
-
+        
         glTexCoord2d(xStart,yStart);
         glVertex2f(t.f_width,t.f_height);
-
+        
         glTexCoord2d(xEnd,yStart);
         glVertex2f(0, t.f_height);
-
+        
         glEnd();
-
+        
         //Reset the rotation and translation
         glRotatef(-t.rotateAngle,0,0,1);
         glTranslatef(-t.pos.x, -t.pos.y, 0);
-
+        
         glDisable(GL_TEXTURE_2D);
         
         
         
         
-       /* // bind to the appropriate texture for this image
-        glEnable(GL_TEXTURE_2D);
-        
-        glBindTexture(GL_TEXTURE_2D,t.id);
-        glPushMatrix();
-        // translate to the right location and prepare to draw
-       // glColor3f(1, 1, 1);
-        glTranslatef(lx + (t.f_width / 2), ly + (t.f_height / 2), 0);
-        
-        glRotated(angle, 1, 1, 0);
-        glTranslatef(-t.f_width / 2, -t.f_height / 2, 0);
-        // draw a quad textured to match the sprite
-        glBegin(GL_QUADS);
-        
-       glTexCoord2f(0, 0);
-        glVertex2f(0, 0);
-        glTexCoord2f(0, 1);
-        glVertex2f(0, t.f_height);
-        glTexCoord2f(1, 1);
-        glVertex2f(t.f_width, t.f_height);
-        glTexCoord2f(1, 0);
-        glVertex2f(t.f_height, 0);
+        /* // bind to the appropriate texture for this image
+         glEnable(GL_TEXTURE_2D);
+         
+         glBindTexture(GL_TEXTURE_2D,t.id);
+         glPushMatrix();
+         // translate to the right location and prepare to draw
+         // glColor3f(1, 1, 1);
+         glTranslatef(lx + (t.f_width / 2), ly + (t.f_height / 2), 0);
+         
+         glRotated(angle, 1, 1, 0);
+         glTranslatef(-t.f_width / 2, -t.f_height / 2, 0);
+         // draw a quad textured to match the sprite
+         glBegin(GL_QUADS);
+         
+         glTexCoord2f(0, 0);
+         glVertex2f(0, 0);
+         glTexCoord2f(0, 1);
+         glVertex2f(0, t.f_height);
+         glTexCoord2f(1, 1);
+         glVertex2f(t.f_width, t.f_height);
+         glTexCoord2f(1, 0);
+         glVertex2f(t.f_height, 0);
+         glEnd();
+         glPopMatrix();
+         glPopMatrix();
+         glDisable(GL_TEXTURE_2D);*/
         glEnd();
+        
+        // restore the model view matrix to prevent contamination
         glPopMatrix();
-        glPopMatrix();
-        glDisable(GL_TEXTURE_2D);*/
-    glEnd();
-    
-    // restore the model view matrix to prevent contamination
-    glPopMatrix();
-}
-
-void drawText(){
-    for(int i = 0; i < vertices.size(); ++i){
-        glColor3d(0.0, 0.0, 0.0);
-        GlutWindow::drawText(vertices[i].x, vertices[i].y, polygons[i].name, GlutWindow::ALIGN_CENTER);
     }
-}
-void onStart() override {}
-void onQuit() override {}
-
-
-void calculateSurface(){
-    double res = 0;
-    for(auto &p: polygons){
-        double si = p.calculateSurface();
-        res += si;
-        S.push_back(si);
-    }
-    sort(S.begin(), S.end());
     
-    //cout << "SURFACE = " << res << endl;
-}
-
-
+    void drawText(){
+        for(int i = 0; i < vertices.size(); ++i){
+            glColor3d(0.0, 0.0, 0.0);
+            GlutWindow::drawText(vertices[i].x, vertices[i].y, polygons[i].name, GlutWindow::ALIGN_CENTER);
+        }
+    }
+    void onStart() override {}
+    void onQuit() override {}
+    
+    
+    void calculateSurface(){
+        double res = 0;
+        double min = 1075200;
+        for(auto &p: polygons){
+            double si = p.calculateSurface();
+            res += si;
+            if(min > si)
+                min = si;
+            S.push_back(si);
+        }
+        S.push_back(min);
+        //sort(S.begin(), S.end());
+        
+        //cout << "SURFACE = " << res << endl;
+    }
+    
+    
 };
 
 

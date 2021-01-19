@@ -6,14 +6,21 @@
 Car::Car(){
     textureId = 0;
 }
-Car::Car(GLuint texture, Vector2D position){
+Car::Car(GLuint texture, Vector2D& position){
     textureId = texture;
     this->position = position;
+}
+
+Car::Car(GLuint texture, Vector2D& source, Vector2D& destination, Vector2D& V0, Vector2D& V1,  int polygon, double angle): source(source), destination(destination), V0(V0), V1(V1) {
+    textureId = texture;
+    this->angle = angle;
+    this->position = source;
 }
 void Car::draw(){
     glBindTexture(GL_TEXTURE_2D,textureId);
     glPushMatrix();
     glTranslatef(position.x,position.y,0.0);
+    glRotatef(angle,0,0,1);
     glBegin(GL_QUADS);
     glTexCoord2f(0.0,0.0);
     glVertex2f(-40.0,-16.0);
@@ -29,10 +36,10 @@ void Car::draw(){
 
 Vector2D Car::traj(float t) {
     Vector2D a,b,c,d;
-    a = (position - destination)*2+V0+V1;
-    b = (destination - position)*3-(V0*2)-V1;
+    a = (source - destination)*2+V0+V1;
+    b = (destination - source)*3-(V0*2)-V1;
     c = V0;
-    d = position;
+    d = source;
     return a*pow(t,3)+b*pow(t,2)+c*t+d;
 }
 
@@ -45,8 +52,11 @@ float Car::move(double dt, float velocity) {
     while(d>0 && t<1.0){
         t+=epsilon;
         Pj = traj(t);
+        angle = getAngle(Pi,Pj);
         points.push_back(Pj);
         cout <<"( "<<Pj.x<<" , "<<Pj.y<<")"<<endl;
+        position.x=Pj.x;
+        position.y=Pj.y;
         d-= (Pj-Pi).norm();
         Pi = Pj;
     }
