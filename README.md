@@ -4,8 +4,8 @@ todo list:                                   ✅Done ⌛ In Progress
   - Voronoi Diagram ✅
   - Loading Textures ✅
   - Calculating Gate Position ✅
-  - Calculating Cars Number In Each Field  ⌛
-  - Calculating Cars' Positions In Each Field ⌛
+  - Calculating Cars Number In Each Field  ✅
+  - Calculating Cars' Positions In Each Field ✅
   - Calculating Shortest Paths ✅
   - Calculating Polynomial routes ⌛
   - Finding The Right Field For Each Car ⌛
