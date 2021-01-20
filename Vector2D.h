@@ -72,7 +72,7 @@ public :
     }
     
     string toString(){
-        return " ( " +  to_string((int)x) + ", " + to_string((int)y) +" )\n";
+        return " (" +  to_string((int)x) + ", " + to_string((int)y) +") \n";
     }
    
 };

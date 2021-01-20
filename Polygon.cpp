@@ -136,9 +136,10 @@ void Polygon::draw(){
 }
 
 void Polygon::drawText(){
+    
     for(int i = 0; i < vertices.size(); ++i){
-        glColor3d(1.0, 1.0, 1.0);
-        GlutWindow::drawText(vertices[i].x, vertices[i].y, name, GlutWindow::ALIGN_CENTER);
+        glColor3d(0.0, 0.0, 0.0);
+        GlutWindow::drawText(vertices[i].x, vertices[i].y,  to_string(i), GlutWindow::ALIGN_CENTER, GLUT_BITMAP_TIMES_ROMAN_24);
     }
 }
 bool Polygon::isOnTheLeft( Vector2D &p,  Vector2D &p1,  Vector2D &p2){

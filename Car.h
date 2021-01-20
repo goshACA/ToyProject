@@ -45,29 +45,25 @@ struct Gate: Texture {
                            f_width, f_height, rotateAngle, "GATE"){}
 };
 
-struct CarPark: Texture {
-    int count;
-    int polygon;
-    CarPark(): Texture(){}
-    CarPark(Vector2D& pos, Edge& e, GLuint id, double rotateAngle, int polygon, int count = 0): Texture(pos, e, id,
-                           park_w, park_h, rotateAngle, "CARPARK"){
-        this->count = count;
-        this->polygon = polygon;
-        
-    }
-    
-};
-
 class Car {
 
 public:
     vector<Vector2D> points;
+    vector<pair<int,pair<Gate,Vector2D>>> path;
     GLuint textureId=0;
+    string color;
+    bool done=false;
+    bool reachedDesGate=false;
+    bool triggerOtherCar=false;
+    int progress=0,max,goal=0,id;
+    int colorId;
+    int destination_room;
     float t=0, epsilon = 0.007;
     double f_width = 80;
     double f_height = 32;
-   // double defAngle = 0;
+    // double defAngle = 0;
     double angle = 0;
+    double elapsedTime = 0;
     Vector2D position,source= Vector2D(40,250),V0 = Vector2D(400,0),V1 = Vector2D(400,400);
     Vector2D destination = Vector2D(400,200);
     int polygon;
@@ -84,6 +80,18 @@ public:
     void draw();
     Vector2D traj(float t);
     float move(double ft, float velocity);
+    void init(){
+        destination = path[0].second.first.pos;
+        V1 = (path[0].second.first.e.B - path[0].second.first.e.A).rightOrtho();
+        max = path.size();
+    }
+    void update(Vector2D destination,Vector2D orientation){
+        V0 = V1;
+        source = this->destination;
+        this->destination=destination;
+        V1=orientation;
+        t=0;
+    }
     double getAngle(const Vector2D &a, const Vector2D &b)  {
         Vector2D u = b-a;
         if (u.x>0) {
@@ -93,22 +101,42 @@ public:
         }
     }
 };
+
+struct CarPark: Texture {
+    int count;
+    int polygon;
+    bool free = true;
+    Car *car = nullptr;
+    int room_id;
+    void setCar(Car* c){
+        car = c;
+    }
+    CarPark(): Texture(){}
+    CarPark(Vector2D& pos, Edge& e, GLuint id, double rotateAngle, int polygon, int count = 0): Texture(pos, e, id,
+                           park_w, park_h, rotateAngle, "CARPARK"){
+        this->count = count;
+        this->polygon = polygon;
+        
+    }
+    
+};
+
 const string nameColor[] = {"blue", "white", "cyan", "purple", "brown", "grey", "red", "green", "orange", "yellow"};
 
 struct Room{
     string name = "";
     Vector2D point;
     int hexValue = -1;
-    Gate gate;
+    vector<pair<int,Gate>> gate;
     vector<CarPark> parks;
     vector<Car*> cars;
     Room(): point(Vector2D(-1, -1)) {
-        
+
     }
     Room(string _name, float x, float y, int _hexValue): name(_name), point(Vector2D(x, y)){
         hexValue = _hexValue;
     }
-   
+
 private:
     static int getColorIndex(string& name){
         if(name == "Foxrot") return 0;
@@ -124,7 +152,7 @@ private:
         return -1;
     }
 public:
-    
+
     static string getColorName(string& name){
         int ind = getColorIndex(name);
         if(ind != -1)
@@ -132,18 +160,31 @@ public:
         return "";
     }
 
-    
+    CarPark* getFreePark(){
+        for (int i=0;i<parks.size();i++){
+            if (parks[i].free) return &parks[i];
+        }return nullptr;
+    }
+
     static string getWrongColorName(string& name, map<string, int>& counts) {
         int r = rand()% 10;
         int ind = getColorIndex(name);
         if(ind == -1)
-        return "";
+            return "";
         while(r == ind || counts[nameColor[r]] <= 0){
             r = rand()% 10;
         }
         return nameColor[r];
     }
+    static int getIndexByColor(string& color){
+        for(int i = 0; i < 10; ++i)
+            if(nameColor[i] == color) return i;
+        return -1;
+    }
 };
+
+
+
 
 
 

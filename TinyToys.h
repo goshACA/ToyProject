@@ -12,6 +12,7 @@
 #include "Car.h"
 #include "Mesh.h"
 #include "glutWindow.h"
+#include <queue>
 #define width 1280
 #define height 840
 using namespace std;
@@ -126,6 +127,7 @@ private:
     vector<Gate> gates;
     vector<CarPark> carparks;
     Mesh m;
+    vector<Car*> queue;
     bool isVoronoiMode = false;
     GLuint park;
     GLuint gate;
@@ -177,7 +179,7 @@ public:
                 if(graph[i][j] !=INF){
                     auto g = Gate(midpoint, adjacency[i][j], gate, angle);
                     gates.push_back(g);
-                    rooms[i].gate = g;
+                    rooms[i].gate.push_back(make_pair(j,g));
                 }
             }
         }
@@ -203,7 +205,6 @@ public:
                 angle += 90;
             }
             
-        
             
             Vector2D point;
             int count = getCarParkCount(i);
@@ -218,8 +219,9 @@ public:
                     e = Edge(midpoint, adjacency[i][i].B);
                     dist = k - d;
                 }
-                point = pointOnDistance(40*dist, e);
+                point = pointOnDistance(park_w/2*dist, e);
                 auto carpark = CarPark(point, adjacency[i][i], park,  angle, i);
+                carpark.room_id = i;
                 carparks.push_back(carpark);
                 rooms[i].parks.push_back(carpark);
                 ++k;
@@ -306,38 +308,105 @@ public:
     int getCarParkCount(int i){
         return floor(4*S[i]/(3*S[S.size()-1]));
     }
-    
+
+    vector<pair<int,pair<Gate,Vector2D>>> carPath(int s, int d){
+        vector<int> path = constructPath(s, d);
+        vector<pair<int,pair<Gate,Vector2D>>> result;
+        for(int i = 0;i<path.size()-1;i++){
+            for(int j=0;j<rooms[path[i]].gate.size();j++){
+                if(rooms[path[i]].gate[j].first==path[i+1]){
+                    result.push_back(make_pair(path[i+1],make_pair(rooms[path[i]].gate[j].second,(rooms[path[i]].gate[j].second.e.B - rooms[path[i]].gate[j].second.e.A).rightOrtho())));
+                }
+            }
+        }
+        return result;
+    }
     
     void placeCars(){
+        int count=0;
         for(int i = 0; i < polygons.size(); ++i){
             for(auto &carpark: carparks){
                 if(carpark.polygon == i){
                     auto v0 = (carpark.e.B - carpark.e.A).rightOrtho();
-                    auto v1 = (rooms[i].gate.e.B - rooms[i].gate.e.A).rightOrtho();
-                    auto destPos = rooms[i].gate.pos;
+                    auto v1 = Vector2D(400,700);
+                    auto destPos = Vector2D(400,700);
                     auto startPos = getShiftedPoint(carpark);
                     auto car = new Car(getCarTextureByColor(rooms[i].name), startPos,destPos, v0, v1, i, carpark.rotateAngle);
+                    car->color=color_car;
+                    car->colorId=Room::getIndexByColor(car->color);
+                    car->path = carPath(i,car->colorId);
+                    car->init();
+                    car->id=count++;
                     cars.push_back(*car);
+                    int a = getCarparkByValue(i, carpark);
+                    if(a != -1){
+                        rooms[i].parks[a].setCar(car);
+                    }
+                    cout << "CAR belongs to "<<car->color<<" id "<<car->colorId<<" exists in "<<rooms[i].name<<" room number "<<i<<" carpark room id "<<carpark.room_id<<" gate room id"<<rooms[i].gate[0].first<<endl;
                     rooms[i].cars.push_back(car);
-                    
                 }
             }
         }
     }
-    
+    int getCarparkByValue(int i, CarPark& carpark){
+        for(int j = 0; j < rooms[i].parks.size(); ++j){
+            if(carpark.pos == rooms[i].parks[j].pos){
+                
+                return j;
+            }
+        }return -1;
+    }
+    string color_car;
     GLuint getCarTextureByColor(string name){
         string res = Room::getWrongColorName(name, colorCounts);
         --colorCounts[res];
         int x = 0, y = 0;
+        color_car=res;
         return loadTGATexture("../Textures/cars/" + res + "car.tga",x,y);
     }
     
     
-    
+    int cars_done=0;
     void onUpdate(double dt) override{
-        if(move ){
-            cars[10].t = cars[10].move(t, 30);
+        if(move){
+            if (!queue.empty()) {
+                for (int i = 0; i < queue.size(); i++) {
+                    if (!queue[i]->done) {
+                        if (!queue[i]->reachedDesGate) {
+                            queue[i]->move(dt, 200);
+                        } else {
+                            if (queue[i]->triggerOtherCar == true) {
+                                queue[i]->triggerOtherCar = false;
+                                CarPark *cp = rooms[queue[i]->goal].getFreePark();
+                                auto V = (cp->e.B - cp->e.A).rightOrtho();
+                                auto P = getLastPoint(*cp);
+                                queue[i]->update(P, V);
+                                cp->free = false;
+                                queue.push_back(&cars[cp->car->id]);
+                            } else {
+                                if (queue[i]->t < 1)
+                                    queue[i]->move(dt, 200);
+                                else queue[i]->done = true;
+                            }
+                        }
+                    } else {
+                        cars_done++;
+                        queue.erase(remove(queue.begin(), queue.end(), queue[i]), queue.end());
+                    }
+                }
+            }
+            else if(!cars_done < cars.size()){
+                int i=0;bool alldone=true;
+                while(i<cars.size()&&alldone){
+                    if (cars[i].done!=true) {
+                        queue.push_back(&cars[i]);
+                        alldone=false;
+                    }
+                    i++;
+                }
+            }
         }
+        
     }
     
     void onKeyPressed(unsigned char c, double x, double y) override{
@@ -350,6 +419,7 @@ public:
         
         else if(c == 'g'){
             move = true;
+            queue.push_back(&cars[2]);
         }
     }
     
@@ -378,9 +448,22 @@ public:
         
         for(auto &car: cars){
             drawCar(car);
-            
         }
         
+        
+    }
+    
+    Vector2D getLastPoint(CarPark& carpark){
+        Vector2D c = getShiftedPoint(carpark);
+        if(carpark.pos.x == width){
+            c = c + Vector2D(carpark.f_width, -carpark.f_height);
+        } else if(carpark.pos.x > 0 && carpark.pos.x < width && carpark.pos.y > 0 && carpark.pos.y < height){
+            auto u = (carpark.e.B - carpark.e.A).ortho();
+            u.normalize();
+            int t = u.y > 0 ? 1 : -1;
+            c = c + Vector2D(0, carpark.f_height/2) * t;
+        }
+        return c;
     }
     
     Vector2D getOrhoVector(Texture& txt){
@@ -449,40 +532,6 @@ public:
         
         assert(t.textureId!=0);
         
-        /*glEnable(GL_TEXTURE_2D);
-         glPushMatrix();
-         glBindTexture(GL_TEXTURE_2D,t.textureId);
-         glPushMatrix();
-         
-         
-         glEnable(GL_TEXTURE_2D);
-         
-         //glBindTexture(GL_TEXTURE_2D, t.textureId);
-         
-         glTranslatef(t.position.x, t.position.y, 0);
-         glRotatef(t.angle, 0, 0, 1);
-         
-         glBegin(GL_QUADS);
-         int xStart = 0, xEnd = 1, yStart = 0, yEnd = 1;
-         glTexCoord2d(xEnd,yEnd);
-         glVertex2f(0, 0);
-         
-         glTexCoord2d(xStart,yEnd);
-         glVertex2f(t.f_width, 0);
-         
-         glTexCoord2d(xStart,yStart);
-         glVertex2f(t.f_width,t.f_height);
-         
-         glTexCoord2d(xEnd,yStart);
-         glVertex2f(0, t.f_height);
-         
-         glEnd();
-         
-         //Reset the rotation and translation
-         glRotatef(-t.angle,0,0,1);
-         glTranslatef(-t.position.x, -t.position.y, 0);
-         
-         glDisable(GL_TEXTURE_2D);*/
         int xStart = 0, xEnd = 1, yStart = 0, yEnd = 1;
         glEnable(GL_TEXTURE_2D);
         
@@ -557,36 +606,9 @@ public:
         
         
         
-        
-        /* // bind to the appropriate texture for this image
-         glEnable(GL_TEXTURE_2D);
-         
-         glBindTexture(GL_TEXTURE_2D,t.id);
-         glPushMatrix();
-         // translate to the right location and prepare to draw
-         // glColor3f(1, 1, 1);
-         glTranslatef(lx + (t.f_width / 2), ly + (t.f_height / 2), 0);
-         
-         glRotated(angle, 1, 1, 0);
-         glTranslatef(-t.f_width / 2, -t.f_height / 2, 0);
-         // draw a quad textured to match the sprite
-         glBegin(GL_QUADS);
-         
-         glTexCoord2f(0, 0);
-         glVertex2f(0, 0);
-         glTexCoord2f(0, 1);
-         glVertex2f(0, t.f_height);
-         glTexCoord2f(1, 1);
-         glVertex2f(t.f_width, t.f_height);
-         glTexCoord2f(1, 0);
-         glVertex2f(t.f_height, 0);
-         glEnd();
-         glPopMatrix();
-         glPopMatrix();
-         glDisable(GL_TEXTURE_2D);*/
+      
         glEnd();
         
-        // restore the model view matrix to prevent contamination
         glPopMatrix();
     }
     
@@ -602,7 +624,7 @@ public:
     
     void calculateSurface(){
         double res = 0;
-        double min = 1075200;
+        double min = width * height;
         for(auto &p: polygons){
             double si = p.calculateSurface();
             res += si;
@@ -611,9 +633,6 @@ public:
             S.push_back(si);
         }
         S.push_back(min);
-        //sort(S.begin(), S.end());
-        
-        //cout << "SURFACE = " << res << endl;
     }
     
     

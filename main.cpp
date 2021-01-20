@@ -125,6 +125,9 @@ int main(int argc,char **argv) {
     rooms.push_back(Room("Hotel", 900, 280, 0x915136));
     rooms.push_back(Room("India", 1140, 350, 0x777777));
     rooms.push_back(Room("Juliett", 970, 80, 0xffffff));
+    for(auto &p: rooms){
+        std::cout << p.name + ": " << p.point.toString();
+    }
     
     int V = 10;
     vector<vector<int> > graph

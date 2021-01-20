@@ -3,6 +3,7 @@
 //
 
 #include "Car.h"
+
 Car::Car(){
     textureId = 0;
 }
@@ -15,6 +16,7 @@ Car::Car(GLuint texture, Vector2D& source, Vector2D& destination, Vector2D& V0, 
     textureId = texture;
     this->angle = angle;
     this->position = source;
+
 }
 void Car::draw(){
     glBindTexture(GL_TEXTURE_2D,textureId);
@@ -23,16 +25,17 @@ void Car::draw(){
     glRotatef(angle,0,0,1);
     glBegin(GL_QUADS);
     glTexCoord2f(0.0,0.0);
-    glVertex2f(-40.0,-16.0);
+    glVertex2f(-car_w/2,-car_h/2);
     glTexCoord2f(1.0,0.0);
-    glVertex2f(40.0,-16.0);
+    glVertex2f(car_w/2,-car_h/2);
     glTexCoord2f(1.0,1.0);
-    glVertex2f(40.0,16.0);
+    glVertex2f(car_w/2,car_h/2);
     glTexCoord2f(0.0,1.0);
-    glVertex2f(-40.0,16.0);
+    glVertex2f(-car_w/2,car_h/2);
     glEnd();
     glPopMatrix();
 }
+
 
 Vector2D Car::traj(float t) {
     Vector2D a,b,c,d;
@@ -44,21 +47,44 @@ Vector2D Car::traj(float t) {
 }
 
 float Car::move(double dt, float velocity) {
-    Vector2D Pi= traj(t),Pj;
-    points.push_back(Pi);
-    cout <<"( "<<Pi.x<<" , "<<Pi.y<<")"<<endl;
+    if(progress<max){
+        if(t>1){
+            progress++;
+            if (progress!=max) {
+                Vector2D P = path[progress].second.first.pos;
+                Vector2D V = (path[progress].second.first.e.B - path[progress]
+                              .second.first.e.A).rightOrtho();
+                update(P, V);
+            }
+        }
+        Vector2D Pi= traj(t),Pj;
+        points.push_back(Pi);
+        cout <<"( "<<Pi.x<<" , "<<Pi.y<<")"<<endl;
+        cout <<"SOURCE ( "<<source.x<<" , "<<source.y<<")"<<endl;
+        double d=dt*velocity;
+        while(d>0 && t<1.0){
+            t+=epsilon;
+            elapsedTime += dt;
+            Pj = traj(t);
+            angle = getAngle(Pi,Pj);
+            points.push_back(Pj);
+            cout <<"( "<<Pj.x<<" , "<<Pj.y<<")"<<endl;
+            position.x=Pj.x;
+            position.y=Pj.y;
+            d-= (Pj-Pi).norm();
+            Pi = Pj;
+        }
+    }
+    else {
+        cout<<"elapsedTime for the car: " << elapsedTime << " with the color "<< color <<endl;
 
-    double d=dt*velocity;
-    while(d>0 && t<1.0){
-        t+=epsilon;
-        Pj = traj(t);
-        angle = getAngle(Pi,Pj);
-        points.push_back(Pj);
-        cout <<"( "<<Pj.x<<" , "<<Pj.y<<")"<<endl;
-        position.x=Pj.x;
-        position.y=Pj.y;
-        d-= (Pj-Pi).norm();
-        Pi = Pj;
+        if(!reachedDesGate){
+            reachedDesGate = true;
+            triggerOtherCar = true;
+            goal = path[max-1].first;
+            cout <<"goal"<<goal<<endl;
+            progress--;
+        }
     }
     return t;
 }

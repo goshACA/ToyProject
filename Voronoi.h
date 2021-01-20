@@ -122,7 +122,7 @@ public:
             auto t = leftTriangle(sub_triangles, vertices[i]);
             bool isOpened = t != nullptr;
             if(isOpened){
-                Edge* E = /*nextEdge(t, vertices[i]);*/ new Edge(vertices[i], *nextPoint(t, vertices[i]));
+                Edge* E =  new Edge(vertices[i], *nextPoint(t, vertices[i]));
                 Vector2D H = E->center();
                 Vector2D u = rightOrthogonalVector(*E);
                 auto Q = IntersectionWithBorders(H, u, 0, 0, width, height);
@@ -140,13 +140,10 @@ public:
                 t =  rightTriangle(*t,vertices[i]);
                 removeTriangle(sub_triangles, tprev);
             }
-            std::cout << " i: " << i << std::endl;
-            //t->print();
             t->calculateCircle();
             points.push_back(t->circumCenter);
             insert(points);
             if(isOpened){
-                //new Edge(vertices[i], *nextPoint(t, vertices[i]));
                 auto E_ = new Edge(*prevPoint(t, vertices[i]), vertices[i]);
                 auto H_ = E_->center();
                 auto u_ = rightOrthogonalVector(*E_);
@@ -155,18 +152,17 @@ public:
                 insert(points);
             }
             removeTriangle(sub_triangles, t);
-            //p = Polygon(points);
             addCornerPoints(points);
             p = Polygon(points);
             p.setEdges();
             p.setVoronoiMode(true);
-            //p.setEdges();
             P.push_back(p);
         }
         setAdjacency();
         printAdjacency();
         
     }
+    
     
     
     void printAdjacency(){
@@ -224,8 +220,6 @@ public:
         
     }
     Triangle* leftTriangle(const vector<Triangle*> &T, Vector2D Q){
-       
-        
         auto p=T.begin();
         while (p!=T.end()) {
             auto nextP = nextPoint(*p, Q);
