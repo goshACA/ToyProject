@@ -565,7 +565,6 @@ public:
     void drawTexture(Texture& t){
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        //angle = 90;
         
         assert(t.id!=0);
         
@@ -573,7 +572,6 @@ public:
         glPushMatrix();
         glBindTexture(GL_TEXTURE_2D,t.id);
         glPushMatrix();
-        
         
         glEnable(GL_TEXTURE_2D);
         

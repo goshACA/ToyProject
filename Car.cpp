@@ -25,13 +25,13 @@ void Car::draw(){
     glRotatef(angle,0,0,1);
     glBegin(GL_QUADS);
     glTexCoord2f(0.0,0.0);
-    glVertex2f(-car_w/2,-car_h/2);
+    glVertex2f(-40.0,-16.0);
     glTexCoord2f(1.0,0.0);
-    glVertex2f(car_w/2,-car_h/2);
+    glVertex2f(40.0,-16.0);
     glTexCoord2f(1.0,1.0);
-    glVertex2f(car_w/2,car_h/2);
+    glVertex2f(40.0,16.0);
     glTexCoord2f(0.0,1.0);
-    glVertex2f(-car_w/2,car_h/2);
+    glVertex2f(-40.0,16.0);
     glEnd();
     glPopMatrix();
 }
@@ -52,8 +52,7 @@ float Car::move(double dt, float velocity) {
             progress++;
             if (progress!=max) {
                 Vector2D P = path[progress].second.first.pos;
-                Vector2D V = (path[progress].second.first.e.B - path[progress]
-                              .second.first.e.A).rightOrtho();
+                Vector2D V = (path[progress].second.first.e.B - path[progress].second.first.e.A).rightOrtho();
                 update(P, V);
             }
         }
@@ -63,8 +62,8 @@ float Car::move(double dt, float velocity) {
         cout <<"SOURCE ( "<<source.x<<" , "<<source.y<<")"<<endl;
         double d=dt*velocity;
         while(d>0 && t<1.0){
-            t+=epsilon;
             elapsedTime += dt;
+            t+=epsilon;
             Pj = traj(t);
             angle = getAngle(Pi,Pj);
             points.push_back(Pj);
@@ -76,7 +75,7 @@ float Car::move(double dt, float velocity) {
         }
     }
     else {
-        cout<<"elapsedTime for the car: " << elapsedTime << " with the color "<< color <<endl;
+        cout<<"end move " << elapsedTime  <<endl;
 
         if(!reachedDesGate){
             reachedDesGate = true;
@@ -88,6 +87,3 @@ float Car::move(double dt, float velocity) {
     }
     return t;
 }
-
-
-

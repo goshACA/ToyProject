@@ -263,35 +263,26 @@ public:
             vert.push_back(Vector2D(c[i].x, c[i].y));
         }
         
-        //TODO: do while
         if (((vert[0].x == 0)&&(vert[vert.size()-1].y == 0)) || ((vert[0].y == 0)&&(vert[vert.size()-1].x == 0))){
             c.push_back(Vector2D(0,0));
-            //insert(c, i+1);
         } else if(((vert[0].y == 0)&&(vert[vert.size()-1].x == width)) || ((vert[0].x == width)&&(vert[vert.size()-1].y == 0))){
             c.push_back(Vector2D(width,0));
-           //insert(c, i+1);
         } else if(((vert[0].x == width)&&(vert[vert.size()-1].y == height)) || ((vert[0].y == height)&&(vert[vert.size()-1].x == width))){
             c.push_back(Vector2D(width,height));
-           //insert(c, i+1);
         } else if(((vert[0].x == 0)&&(vert[vert.size()-1].y == height)) || ((vert[0].y == height)&&(vert[vert.size()-1].x == 0))){
             c.push_back(Vector2D(0,height));
-            //insert(c, i+1);
         }
         
         
         for(int i = 0; i < vert.size()-1; ++i){
             if (((vert[i].x == 0)&&(vert[i+1].y == 0)) || ((vert[i].y == 0)&&(vert[i+1].x == 0))){
                 c.insert(c.begin() + i+1, Vector2D(0,0));
-                //insert(c, i+1);
             } else if(((vert[i].y == 0)&&(vert[i+1].x == width)) || ((vert[i].x == width)&&(vert[i+1].y == 0))){
                 c.insert(c.begin() + i + 1, Vector2D(width,0));
-               //insert(c, i+1);
             } else if(((vert[i].x == width)&&(vert[i+1].y == height)) || ((vert[i].y == height)&&(vert[i+1].x == width))){
                 c.insert(c.begin() +  i+1, Vector2D(width,height));
-               //insert(c, i+1);
             } else if(((vert[i].x == 0)&&(vert[i+1].y == height)) || ((vert[i].y == height)&&(vert[i+1].x == 0))){
                 c.insert(c.begin() + i+1, Vector2D(0,height));
-                //insert(c, i+1);
             }
         }
     }
@@ -329,22 +320,10 @@ public:
         auto r = Edge(Vector2D(width, height), Vector2D(width, 0));
         auto b = Edge(Vector2D(width, 0), Vector2D(0, 0));
         
-        if(Intersects(a, point, l.A, l.B, p)){
+        if(Intersects(a, point, l.A, l.B, p) || Intersects(a, point, r.A, r.B, p) || Intersects(a, point, b.A, b.B, p) || Intersects(a, point, t.A, t.B, p)){
             return p;
         }
-        
-        if(Intersects(a, point, r.A, r.B, p)){
-            return p;
-        }
-        
-        if(Intersects(a, point, b.A, b.B, p)){
-            return p;
-        }
-        
-        if(Intersects(a, point, t.A, t.B, p)){
-            return p;
-        }
-        
+    
         return point;
     }
     

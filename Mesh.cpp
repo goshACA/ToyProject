@@ -58,41 +58,6 @@ void Mesh::drawTriangles(){
     }
 }
 
-
-
-
-
-/*void Mesh::onDraw(){
-    if(isVoronoiSolved){
-        voronoi.defineColors();
-        for(int i = 0; i < voronoi.P.size(); ++i){
-            
-            glColor3d(0.5, 0.5, 0.5);
-            voronoi.P[i].draw();
-            
-            glColor3d(0.0, 0.0, 0.0);
-            //vector<Vector2D> line;
-           // line.push_back(Vector2D())
-             
-            
-        }
-        
-        for(int i = 5; i < voronoi.P.size(); ++i){
-            
-            voronoi.P[i].drawText();
-        }
-        
-    }else
-        drawTriangles();
-}
-
-/*void Mesh::onMouseMove(double cx, double cy){
-    Vector2D v((float)cx,(float)cy);
-    for (auto &t:draw_triangles) {
-        t->onMouseMove(v);
-    }
-}*/
-
 void Mesh::solveDealunay() {
     while(!isAllDealunay()){
         list<int> processList;
@@ -150,12 +115,6 @@ Triangle* Mesh::neighborInside(Triangle* base, int* ind){
     } return nullptr;
 }
 
-
-/*void Mesh::onKeyPressed(unsigned char c, double x, double y){
-    solveDealunay();
-}*/
-
-
 void Mesh::triangulate(){
     vector<Triangle> base_triangles;
     queue<Triangle> tris;
@@ -199,17 +158,6 @@ bool Mesh::isAllDealunay(){
     return true;
 }
 
-
-/*void Mesh::onMouseDown(int button,double cx,double cy){
-    if(!isVoronoiSolved){
-        voronoi.solveVoronoi();
-        isVoronoiSolved = true;
-    }
-}*/
-
-
-
-
 vector<Polygon> Mesh::getVoronoiPolygons(){
     if(!isVoronoiSolved){
         voronoi.solveVoronoi();
@@ -222,8 +170,3 @@ vector<Triangle*> Mesh::getTriangulation(){
     return draw_triangles;
 }
 
-Edge Mesh::getUnshared(Polygon& p){
-    Edge e;
-    
-    return e;
-}

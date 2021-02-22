@@ -29,12 +29,6 @@ public:
     
     ~Mesh();
     void drawTriangles();
-   /* void onDraw() override;
-    void onStart() override {}
-    void onQuit() override {}
-    void onMouseMove(double cx,double cy) override;
-    void onMouseDown(int button,double cx,double cy);
-    void onKeyPressed(unsigned char c,double x,double y) override;*/
     
     void solveDealunay();
     bool isAllDealunay();
@@ -44,7 +38,6 @@ public:
     vector<Polygon> getVoronoiPolygons();
     vector<Triangle*> getTriangulation();
 
-    Edge getUnshared(Polygon& p);
     vector<vector<Edge>> getAdjacency(){
         return voronoi.adjacency;
     }
